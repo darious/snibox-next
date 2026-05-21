@@ -1,0 +1,186 @@
+package views
+
+import (
+    "html/template"
+    "github.com/darious1472/snibox-next/internal/markdown"
+    "github.com/darious1472/snibox-next/internal/store"
+)
+
+templ Item(it *store.Item, readOnly bool) {
+    <div class="main-head">
+        if readOnly {
+            <span class="title">{ it.Title }</span>
+        } else {
+            <input class="title"
+                   type="text"
+                   name="title"
+                   value={ it.Title }
+                   hx-patch={ "/items/" + it.ID }
+                   hx-trigger="change, keydown[key=='Enter']"
+                   hx-swap="none"/>
+        }
+        if !readOnly {
+            <button id="pin-btn" class={ pinBtnClass(it.Pinned) } title="Pin (p)"
+                    hx-post={ "/items/" + it.ID + "/pin" }
+                    hx-target="closest button"
+                    hx-swap="outerHTML">
+                @templ.Raw(IconPin)
+            </button>
+            <button class="icon-btn" title="Archive"
+                    hx-post={ "/items/" + it.ID + "/archive" }
+                    hx-swap="none">
+                @templ.Raw(IconArchive)
+            </button>
+            <button class="icon-btn danger" title="Delete"
+                    hx-delete={ "/items/" + it.ID }
+                    hx-confirm="Delete this item?"
+                    hx-target="#main"
+                    hx-swap="innerHTML">
+                @templ.Raw(IconTrash)
+            </button>
+        }
+    </div>
+    <div class="meta-bar">
+        if it.Type == store.TypeSnippet {
+            <label>
+                lang
+                <select name="language"
+                        hx-patch={ "/items/" + it.ID }
+                        hx-trigger="change"
+                        hx-swap="none"
+                        disabled?={ readOnly }>
+                    for _, l := range CommonLanguages {
+                        <option value={ l } selected?={ DerefStr(it.Language) == l }>{ l }</option>
+                    }
+                </select>
+            </label>
+        }
+        for _, t := range it.Tags {
+            <span class="tag-chip">
+                { "#" + t }
+                if !readOnly {
+                    &nbsp;
+                    <a href="#" style="color:inherit"
+                       hx-delete={ "/items/" + it.ID + "/tags/" + t }
+                       hx-target="#main"
+                       hx-swap="innerHTML">×</a>
+                }
+            </span>
+        }
+        if !readOnly {
+            <form hx-post={ "/items/" + it.ID + "/tags" }
+                  hx-target="#main"
+                  hx-swap="innerHTML">
+                <input class="tag-add" type="text" name="tag" placeholder="+ tag"
+                       size="10" autocomplete="off"/>
+            </form>
+        }
+    </div>
+    <div class="main-body">
+        if it.Type == store.TypeSnippet {
+            @snippetBody(it, readOnly)
+        } else if it.Type == store.TypeNote {
+            @noteBody(it, readOnly)
+        } else if it.Type == store.TypeLink {
+            @linkBody(it, readOnly)
+        }
+    </div>
+}
+
+func pinBtnClass(p bool) string {
+    if p {
+        return "icon-btn active"
+    }
+    return "icon-btn"
+}
+
+templ snippetBody(it *store.Item, readOnly bool) {
+    <div class="snippet-toolbar">
+        if !readOnly {
+            <button id="snippet-edit-toggle" class="btn"
+                    hx-get={ "/partials/item/" + it.ID + "?edit=1" }
+                    hx-target="#main"
+                    hx-swap="innerHTML">Edit</button>
+        }
+        <button class="btn" data-copy-target={ "code-" + it.ID }>Copy</button>
+    </div>
+    <div id={ "code-" + it.ID } class="snippet-block">
+        @templ.Raw(highlight(it.Body, DerefStr(it.Language)))
+    </div>
+}
+
+templ SnippetEditor(it *store.Item) {
+    <div class="snippet-toolbar">
+        <button class="btn primary"
+                hx-patch={ "/items/" + it.ID }
+                hx-include="closest .main-body textarea"
+                hx-target="#main"
+                hx-swap="innerHTML">Save</button>
+        <button class="btn"
+                hx-get={ "/partials/item/" + it.ID }
+                hx-target="#main"
+                hx-swap="innerHTML">Cancel</button>
+    </div>
+    <div class="snippet-block">
+        <textarea name="body" spellcheck="false">{ it.Body }</textarea>
+    </div>
+}
+
+templ noteBody(it *store.Item, readOnly bool) {
+    <div class="note-grid">
+        if readOnly {
+            <div class="rendered" style="grid-column: 1 / -1">
+                @templ.Raw(render(it.Body))
+            </div>
+        } else {
+            <textarea name="body"
+                      spellcheck="false"
+                      hx-patch={ "/items/" + it.ID }
+                      hx-trigger="keyup changed delay:600ms, change"
+                      hx-swap="none">{ it.Body }</textarea>
+            <div class="rendered">
+                @templ.Raw(render(it.Body))
+            </div>
+        }
+    </div>
+}
+
+templ linkBody(it *store.Item, readOnly bool) {
+    <div class="link-card">
+        <div class="url-row">
+            if readOnly {
+                <span class="url-row">{ DerefStr(it.URL) }</span>
+            } else {
+                <input type="url" name="url" value={ DerefStr(it.URL) }
+                       hx-patch={ "/items/" + it.ID }
+                       hx-trigger="change"
+                       hx-swap="none"/>
+            }
+            <a class="btn primary" href={ templ.SafeURL(DerefStr(it.URL)) } target="_blank" rel="noopener noreferrer">Open</a>
+        </div>
+        if readOnly {
+            <div class="rendered">@templ.Raw(render(it.Body))</div>
+        } else {
+            <textarea name="body" placeholder="Description (markdown)"
+                      hx-patch={ "/items/" + it.ID }
+                      hx-trigger="keyup changed delay:600ms, change"
+                      hx-swap="none">{ it.Body }</textarea>
+        }
+    </div>
+}
+
+func render(body string) template.HTML {
+    h, err := markdown.RenderMarkdown(body)
+    if err != nil {
+        return template.HTML("<pre>" + body + "</pre>")
+    }
+    return h
+}
+
+func highlight(body, lang string) template.HTML {
+    h, err := markdown.HighlightCode(body, lang)
+    if err != nil {
+        return template.HTML("<pre>" + body + "</pre>")
+    }
+    return h
+}

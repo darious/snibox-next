@@ -1,0 +1,11 @@
+/snibox
+/snibox.db
+/snibox.db-wal
+/snibox.db-shm
+/data/
+/dist/
+*.test
+*.out
+.DS_Store
+.idea/
+.vscode/

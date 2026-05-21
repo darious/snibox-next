@@ -1,0 +1,88 @@
+package views
+
+import "github.com/darious1472/snibox-next/internal/store"
+
+templ ListPane(d PageData) {
+    <div class="list-head">
+        <h2>{ listTitle(d) }</h2>
+        <span class="count">{ countFmt(len(d.Items)) }</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="search-row">
+        <input type="search"
+               id="search-input"
+               name="q"
+               placeholder="Search… (/ to focus)"
+               value={ d.Query }
+               hx-get={ "/partials/list?view=" + d.View }
+               hx-trigger="input changed delay:120ms, keyup[key=='Enter']"
+               hx-target="#list-pane"
+               hx-swap="innerHTML"
+               hx-push-url="false"/>
+    </div>
+    <div class="list-scroll" id="list-scroll">
+        @ListBody(d.Items, d.Active)
+    </div>
+}
+
+func listTitle(d PageData) string {
+    if d.Query != "" {
+        return "Search results"
+    }
+    if d.Tag != "" {
+        return "#" + d.Tag
+    }
+    return ViewLabel(d.View)
+}
+
+templ ListBody(items []*store.Item, active *store.Item) {
+    if len(items) == 0 {
+        <div class="list-empty">Nothing here.</div>
+    } else {
+        for _, it := range items {
+            @Row(it, active != nil && active.ID == it.ID)
+        }
+    }
+}
+
+templ Row(it *store.Item, active bool) {
+    <a class="list-row"
+       id={ "row-" + it.ID }
+       tabindex="0"
+       if active {
+           data-active="true"
+       }
+       hx-get={ "/partials/item/" + it.ID }
+       hx-target="#main"
+       hx-swap="innerHTML"
+       hx-push-url={ "/item/" + it.ID }>
+        <div class="title-row">
+            <span class={ TypeClass(string(it.Type)) }>
+                @templ.Raw(TypeIcon(string(it.Type)))
+            </span>
+            <span class="title">{ it.Title }</span>
+            if it.Pinned {
+                <span class="pin" title="Pinned">@templ.Raw(IconPin)</span>
+            }
+        </div>
+        <div class={ rowPreviewClass(it) }>{ PreviewText(it) }</div>
+        <div class="meta">
+            for i, t := range it.Tags {
+                if i < 3 {
+                    <span class="tag-chip">{ "#" + t }</span>
+                }
+            }
+            if len(it.Tags) > 3 {
+                <span class="tag-chip more">{ "+" + itoa(len(it.Tags)-3) }</span>
+            }
+            <span class="right">{ Relative(it.UpdatedAt) }</span>
+        </div>
+    </a>
+}
+
+func rowPreviewClass(it *store.Item) string {
+    if IsMono(it.Type) {
+        return "preview mono"
+    }
+    return "preview"
+}
