@@ -1,0 +1,87 @@
+package views
+
+import "github.com/darious1472/snibox-next/internal/store"
+
+// NewEditor is the full-screen form rendered at GET /new?type=X.
+// Mirrors the Item viewer layout so creation feels like editing.
+templ NewEditor(typ store.ItemType) {
+    <form id="new-form"
+          class="main-pane-form"
+          hx-post="/items"
+          hx-target="#main"
+          hx-swap="innerHTML"
+          hx-push-url="true">
+        <input type="hidden" name="type" value={ string(typ) }/>
+        <div class="main-head">
+            <input class="title"
+                   type="text"
+                   name="title"
+                   required
+                   autofocus
+                   maxlength="200"
+                   placeholder={ "Untitled " + string(typ) + "…" }/>
+            <a class="btn" href={ templ.SafeURL(BuildViewURL(viewForType(typ))) }>Cancel</a>
+            <button type="submit" class="btn primary">Save</button>
+        </div>
+        <div class="meta-bar">
+            if typ == store.TypeSnippet {
+                <label>
+                    lang
+                    <select name="language"
+                            hx-post="/preview/highlight"
+                            hx-include="closest form"
+                            hx-trigger="change"
+                            hx-target="#live-preview"
+                            hx-swap="innerHTML">
+                        for _, l := range CommonLanguages {
+                            <option value={ l }>{ l }</option>
+                        }
+                    </select>
+                </label>
+            }
+            <input type="text" name="tags" placeholder="tags (space separated)" autocomplete="off" style="flex:1;min-width:120px"/>
+        </div>
+        <div class="main-body">
+            if typ == store.TypeLink {
+                <div class="link-card">
+                    <input type="url" name="url" placeholder="https://…" required/>
+                    <div class="note-grid">
+                        <textarea name="body"
+                                  placeholder="Description (markdown, optional)"
+                                  hx-post="/preview/markdown"
+                                  hx-trigger="keyup changed delay:200ms, change"
+                                  hx-target="#live-preview"
+                                  hx-swap="innerHTML"></textarea>
+                        <div id="live-preview" class="rendered live-preview"></div>
+                    </div>
+                </div>
+            } else if typ == store.TypeNote {
+                <div class="note-grid">
+                    <textarea name="body"
+                              placeholder="Write markdown…"
+                              spellcheck="false"
+                              hx-post="/preview/markdown"
+                              hx-trigger="keyup changed delay:200ms, change"
+                              hx-target="#live-preview"
+                              hx-swap="innerHTML"></textarea>
+                    <div id="live-preview" class="rendered live-preview"></div>
+                </div>
+            } else {
+                <div class="snippet-split">
+                    <textarea name="body"
+                              placeholder="Paste code…"
+                              spellcheck="false"
+                              hx-post="/preview/highlight"
+                              hx-include="closest form"
+                              hx-trigger="keyup changed delay:150ms, change"
+                              hx-target="#live-preview"
+                              hx-swap="innerHTML"></textarea>
+                    <div id="live-preview" class="snippet-block live-preview"></div>
+                </div>
+            }
+        </div>
+        <div class="form-foot">
+            <button type="submit" class="btn primary big">Save { string(typ) }</button>
+        </div>
+    </form>
+}

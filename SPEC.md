@@ -334,7 +334,7 @@ snibox-next/
 Flags + env, env wins:
 
 ```
---addr           127.0.0.1:8080  SNIBOX_ADDR            # see §1.1
+--addr           127.0.0.1:8979  SNIBOX_ADDR            # see §1.1
 --db             ./snibox.db     SNIBOX_DB
 --seed-demo      false           SNIBOX_SEED_DEMO       # load testdata/seed.json on empty db
 --read-only      false           SNIBOX_READ_ONLY       # 405 on POST/PUT/PATCH/DELETE + /import
@@ -352,7 +352,7 @@ passed explicitly and is intended for dev / first-run preview, not production.
 
 A build is "done" when:
 
-1. `go run ./cmd/snibox` boots, creates `snibox.db`, serves on `:8080`.
+1. `go run ./cmd/snibox` boots, creates `snibox.db`, serves on `:8979`.
 2. Empty DB + `--seed` populates the 20 demo items from `testdata/seed.json`.
 3. All 8 views render and route correctly.
 4. Create → edit → pin → archive → unarchive → delete round trip works for

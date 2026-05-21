@@ -1,19 +1,27 @@
 services:
-  snibox:
-    build: .
-    # image: ghcr.io/darious1472/snibox-next:latest
-    container_name: snibox
+  snibox-next:
+    image: ghcr.io/darious/snibox-next:latest
+    container_name: snibox-next
     restart: unless-stopped
-    # Bind only on the docker host's loopback. Front this with nginx / Caddy /
-    # nginx-proxy-manager that does the auth (see SPEC §1.1 — Auth is OUT
-    # of scope for v1 of snibox itself).
+    # nginx-proxy-manager on the `web` network fronts this with auth + TLS.
+    # See SPEC §1.1 — auth is out of scope inside the app itself.
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8979:8979"
     volumes:
-      - ./data:/data
+      - /mnt/config/q-docker/service-data/snibox-next:/data
     environment:
-      SNIBOX_ADDR: 0.0.0.0:8080
+      SNIBOX_ADDR: 0.0.0.0:8979
       SNIBOX_DB: /data/snibox.db
       SNIBOX_TRUST_NETWORK: "true"
-      # SNIBOX_SEED_DEMO: "true"
-      # SNIBOX_READ_ONLY: "true"
+      # SNIBOX_READ_ONLY: "true"     # uncomment to make the instance read-only
+      # SNIBOX_SEED_DEMO: "true"     # only on a fresh empty database
+    labels:
+      # Watched by WUD — :latest tag, notify on new digest.
+      - wud.watch=true
+      - wud.watch.digest=true
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

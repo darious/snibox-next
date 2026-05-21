@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-label="Snibox">
+    <rect x="3" y="3" width="42" height="42" rx="10" fill="oklch(24% 0.048 275)"/>
+    <rect x="3" y="3" width="42" height="42" rx="10" stroke="oklch(72% 0.170 285)" stroke-width="2"/>
+    <path d="M16 17c0-2.2 1.8-4 4-4h10c2.2 0 4 1.8 4 4v3c0 2.2-1.8 4-4 4h-6c-2.2 0-4 1.8-4 4v3c0 2.2 1.8 4 4 4h10"
+          stroke="oklch(78% 0.150 290)"
+          stroke-width="3.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+    <circle cx="34" cy="35" r="2.2" fill="oklch(82% 0.160 295)"/>
+</svg>

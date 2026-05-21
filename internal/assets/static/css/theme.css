@@ -1,26 +1,27 @@
-/* Snibox Next theme — warm dark, oklch-based. Tokens are local; no extra palettes. */
+/* Snibox Next theme — dark indigo/violet, oklch-based. Tokens are local; no extra palettes. */
 :root {
-    --bg:           oklch(18% 0.018 75);
-    --bg-elev:      oklch(22% 0.020 75);
-    --bg-elev-2:    oklch(26% 0.020 75);
-    --bg-hover:     oklch(28% 0.020 75);
-    --bg-active:    oklch(32% 0.024 75);
-    --border:       oklch(34% 0.018 75);
-    --border-subtle:oklch(28% 0.014 75);
+    /* Hue 275 = indigo/violet base. Dark, low-chroma surfaces. */
+    --bg:           oklch(16% 0.032 275);
+    --bg-elev:      oklch(20% 0.040 275);
+    --bg-elev-2:    oklch(24% 0.048 275);
+    --bg-hover:     oklch(27% 0.052 275);
+    --bg-active:    oklch(32% 0.062 275);
+    --border:       oklch(36% 0.048 275);
+    --border-subtle:oklch(28% 0.040 275);
 
-    --text:         oklch(94% 0.010 80);
-    --text-muted:   oklch(72% 0.012 80);
-    --text-faint:   oklch(56% 0.014 80);
+    --text:         oklch(95% 0.012 275);
+    --text-muted:   oklch(74% 0.022 275);
+    --text-faint:   oklch(58% 0.028 275);
 
-    --accent:       #3ecf8e;
-    --accent-strong:#2fb47a;
-    --accent-bg:    oklch(34% 0.080 160);
+    --accent:       oklch(72% 0.170 285);
+    --accent-strong:oklch(64% 0.190 285);
+    --accent-bg:    oklch(34% 0.110 285);
 
-    --type-snippet: oklch(78% 0.130 200);
-    --type-note:    oklch(80% 0.120 60);
-    --type-link:    oklch(80% 0.140 320);
+    --type-snippet: oklch(78% 0.130 230);
+    --type-note:    oklch(80% 0.120 95);
+    --type-link:    oklch(78% 0.150 320);
 
-    --danger:       oklch(68% 0.180 25);
+    --danger:       oklch(70% 0.190 25);
 
     --radius-s: 4px;
     --radius:   6px;
@@ -86,14 +87,13 @@ a:hover { text-decoration: underline; }
     letter-spacing: 0.2px;
 }
 .rail-head .brand-mark {
-    width: 22px; height: 22px;
+    width: 26px; height: 26px;
     border-radius: var(--radius-s);
-    background: var(--accent);
-    color: #001a10;
     display: grid; place-items: center;
-    font-weight: 700;
-    font-size: 12px;
+    color: var(--accent);
+    background: transparent;
 }
+.rail-head .brand-mark svg { width: 26px; height: 26px; }
 .rail-section {
     padding: 6px 8px 14px;
     overflow-y: auto;
@@ -348,6 +348,49 @@ a:hover { text-decoration: underline; }
 .rendered table { border-collapse: collapse; }
 .rendered th, .rendered td { border: 1px solid var(--border-subtle); padding: 4px 8px; }
 
+.snippet-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    min-height: 60vh;
+}
+.snippet-split textarea {
+    background: var(--bg-elev);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 10px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    resize: vertical;
+    outline: none;
+    min-height: 60vh;
+}
+.snippet-split .live-preview { min-height: 60vh; max-height: 80vh; overflow: auto; }
+@media (max-width: 899px) {
+    .snippet-split { grid-template-columns: 1fr; }
+}
+.live-preview { background: var(--bg-elev); }
+.live-preview:empty::before {
+    content: "preview";
+    color: var(--text-faint);
+    font-size: 12px;
+}
+.autosave {
+    color: var(--text-faint);
+    font-size: 12px;
+    margin-left: auto;
+    align-self: center;
+}
+.form-foot {
+    padding: 14px 18px 20px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: flex-end;
+}
+.btn.primary.big { padding: 10px 22px; font-size: 14px; }
+
 .snippet-block {
     background: var(--bg-elev);
     border: 1px solid var(--border-subtle);
@@ -382,7 +425,21 @@ a:hover { text-decoration: underline; }
     cursor: pointer;
 }
 .btn:hover { background: var(--bg-hover); }
-.btn.primary { background: var(--accent); color: #001a10; border-color: transparent; }
+.btn.primary { background: var(--accent); color: oklch(15% 0.05 285); border-color: transparent; font-weight: 600; }
+.btn.block { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 8px 12px; }
+.rail-cta { padding: 4px 10px 12px; display: grid; gap: 6px; }
+.rail-cta .btn.block { text-decoration: none; }
+.rail-cta .btn.block svg { width: 16px; height: 16px; }
+.rail-cta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rail-cta-row .btn.small {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    padding: 5px 6px;
+    font-size: 12px;
+    text-decoration: none;
+    color: var(--text-muted);
+}
+.rail-cta-row .btn.small svg { width: 14px; height: 14px; }
+.rail-cta-row .btn.small:hover { color: var(--text); }
 .btn.primary:hover { background: var(--accent-strong); }
 
 .link-card {

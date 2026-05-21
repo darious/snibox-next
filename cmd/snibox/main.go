@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"syscall"
 	"time"
@@ -19,6 +21,9 @@ import (
 	"github.com/darious1472/snibox-next/internal/markdown"
 	"github.com/darious1472/snibox-next/internal/store"
 )
+
+// Version is set via -ldflags="-X main.Version=..." at build time.
+var Version = "dev"
 
 func envBool(key string, def bool) bool {
 	v := os.Getenv(key)
@@ -40,12 +45,18 @@ func envStr(key, def string) string {
 }
 
 func main() {
-	addr := flag.String("addr", envStr("SNIBOX_ADDR", "127.0.0.1:8080"), "listen address")
+	addr := flag.String("addr", envStr("SNIBOX_ADDR", "127.0.0.1:8979"), "listen address")
 	db := flag.String("db", envStr("SNIBOX_DB", "./snibox.db"), "sqlite path")
 	seed := flag.Bool("seed-demo", envBool("SNIBOX_SEED_DEMO", false), "load testdata/seed.json into empty db")
 	readOnly := flag.Bool("read-only", envBool("SNIBOX_READ_ONLY", false), "disable write routes")
 	trustNet := flag.Bool("trust-network", envBool("SNIBOX_TRUST_NETWORK", false), "permit non-loopback bind (auth is assumed external — see SPEC §1.1)")
+	showVer := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVer {
+		fmt.Println("snibox-next", versionString())
+		return
+	}
 
 	if err := guardNetwork(*addr, *trustNet); err != nil {
 		log.Fatalf("refusing to start: %v", err)
@@ -91,11 +102,28 @@ func main() {
 		close(idle)
 	}()
 
-	log.Printf("snibox listening on %s (read-only=%v)", *addr, *readOnly)
+	log.Printf("snibox %s listening on %s (read-only=%v)", versionString(), *addr, *readOnly)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("listen: %v", err)
 	}
 	<-idle
+}
+
+func versionString() string {
+	if Version != "" && Version != "dev" {
+		return Version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range info.Settings {
+			if s.Key == "vcs.revision" && s.Value != "" {
+				if len(s.Value) > 12 {
+					return s.Value[:12]
+				}
+				return s.Value
+			}
+		}
+	}
+	return Version
 }
 
 func guardNetwork(addr string, trust bool) error {

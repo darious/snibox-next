@@ -128,3 +128,15 @@ func BuildViewURL(view string) string {
 	}
 	return "/" + view
 }
+
+func viewForType(t store.ItemType) string {
+	switch t {
+	case store.TypeSnippet:
+		return "snippets"
+	case store.TypeNote:
+		return "notes"
+	case store.TypeLink:
+		return "links"
+	}
+	return "all"
+}

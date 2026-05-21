@@ -259,11 +259,96 @@ func TestTagPage(t *testing.T) {
 	}
 }
 
-func TestNewModalPartial(t *testing.T) {
+func TestNewEditorPage(t *testing.T) {
 	_, ts := newServer(t, false)
-	res, _ := http.Get(ts.URL + "/partials/new")
+	for _, typ := range []string{"snippet", "note", "link"} {
+		res, err := http.Get(ts.URL + "/new?type=" + typ)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(res.Body)
+		if res.StatusCode != 200 {
+			t.Fatalf("%s: status %d", typ, res.StatusCode)
+		}
+		if !strings.Contains(string(body), "main-pane-form") {
+			t.Errorf("%s: form not rendered: %s", typ, string(body)[:200])
+		}
+	}
+}
+
+func TestPreviewMarkdown(t *testing.T) {
+	_, ts := newServer(t, false)
+	res, err := http.PostForm(ts.URL+"/preview/markdown", url.Values{"body": {"# hi\n**bold**"}})
+	if err != nil {
+		t.Fatal(err)
+	}
 	body, _ := io.ReadAll(res.Body)
-	if !strings.Contains(string(body), "modal") {
-		t.Errorf("modal partial empty: %s", string(body))
+	if !strings.Contains(string(body), "<h1") || !strings.Contains(string(body), "<strong>") {
+		t.Errorf("markdown not rendered: %s", string(body))
+	}
+}
+
+func TestPreviewHighlight(t *testing.T) {
+	_, ts := newServer(t, false)
+	res, err := http.PostForm(ts.URL+"/preview/highlight",
+		url.Values{"body": {"package main"}, "language": {"go"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !strings.Contains(string(body), "chroma") {
+		t.Errorf("chroma classes missing: %s", string(body))
+	}
+}
+
+func TestUpdateBodySnippet(t *testing.T) {
+	s, ts := newServer(t, false)
+	snip, _, _ := seed(t, s)
+	res, err := http.PostForm(ts.URL+"/items/"+snip.ID+"/body",
+		url.Values{"body": {"new code"}, "language": {"go"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !strings.Contains(string(body), "chroma") {
+		t.Errorf("expected highlighted html, got %s", string(body))
+	}
+	// Persisted.
+	got, _ := s.Repo.Get(context.Background(), snip.ID)
+	if got.Body != "new code" {
+		t.Errorf("body not saved: %q", got.Body)
+	}
+}
+
+func TestUpdateBodyNote(t *testing.T) {
+	s, ts := newServer(t, false)
+	_, note, _ := seed(t, s)
+	res, err := http.PostForm(ts.URL+"/items/"+note.ID+"/body",
+		url.Values{"body": {"# heading"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if !strings.Contains(string(body), "<h1") {
+		t.Errorf("expected markdown, got %s", string(body))
+	}
+}
+
+func TestPreviewAllowedInReadOnly(t *testing.T) {
+	_, ts := newServer(t, true)
+	res, err := http.PostForm(ts.URL+"/preview/markdown", url.Values{"body": {"hi"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("preview blocked in read-only: %d", res.StatusCode)
+	}
+}
+
+func TestNewEditorBlockedInReadOnly(t *testing.T) {
+	_, ts := newServer(t, true)
+	res, _ := http.Get(ts.URL + "/new?type=note")
+	if res.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("want 405 in read-only, got %d", res.StatusCode)
 	}
 }
