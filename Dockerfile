@@ -1,4 +1,9 @@
-FROM golang:1.25-alpine AS build
+# Cross-compile from the native builder platform (no QEMU emulation).
+# BUILDPLATFORM = whatever the runner is (amd64 on GH free runners).
+# TARGETOS/TARGETARCH = what the final image runs on.
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
+ARG TARGETOS
+ARG TARGETARCH
 ARG VERSION=dev
 WORKDIR /src
 RUN apk add --no-cache git
@@ -7,7 +12,8 @@ RUN go mod download
 COPY . .
 RUN go install github.com/a-h/templ/cmd/templ@v0.3.1020 \
  && /go/bin/templ generate \
- && CGO_ENABLED=0 go build -trimpath \
+ && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath \
         -ldflags="-s -w -X main.Version=${VERSION}" \
         -o /out/snibox ./cmd/snibox
 
