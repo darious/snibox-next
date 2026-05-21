@@ -1,3 +1,9 @@
+# First-time setup:
+#   mkdir -p /mnt/config/q-docker/service-data/snibox-next
+#   chown 10001:10001 /mnt/config/q-docker/service-data/snibox-next
+# The container runs as uid 10001 (non-root). If the bind-mount isn't
+# writable by that uid you'll see "open db: unable to open database file (14)".
+
 services:
   snibox-next:
     image: ghcr.io/darious/snibox-next:latest

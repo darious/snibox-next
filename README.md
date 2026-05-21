@@ -69,9 +69,14 @@ Copy `docker-compose.yml` into `/mnt/config/q-docker/stacks/snibox-next/`
 
 ```sh
 mkdir -p /mnt/config/q-docker/service-data/snibox-next
+chown 10001:10001 /mnt/config/q-docker/service-data/snibox-next   # container uid
 cd /mnt/config/q-docker/stacks/snibox-next
 docker compose up -d
 ```
+
+The container runs as uid `10001` (non-root). If the bind-mount isn't
+writable by that uid the app crashes with
+`open db: unable to open database file (14)` — fix with the `chown` above.
 
 ### 3. nginx-proxy-manager host rule
 
